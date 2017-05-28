@@ -7,23 +7,23 @@ module Todo
   module Db
     # DBの接続とテーブルの作成を行う
     def self.prepare
-
       # データベースのファイルのパスをとる
-      database_path = File.join(ENV['HOME'], '.todo', 'todo.sqlite3') # => /.todo/todo.sqlite3
+      database_path = File.join(ENV['HOME'], '.todo', 'todo.sqlite3') # => ~/.todo/todo.sqlite3
+      connect_databese database_path
+      create_table_if_not_exists database_path
+    end
 
-      puts database_path
-
+    def self.connect_databese(path)
       # データベースに接続する
-      ActiveRecord::Base.establish_connection adapter: 'sqlite3', database: database_path
+      ActiveRecord::Base.establish_connection adapter: 'sqlite3', database: path
+    end
 
-      puts '接続完了'
-
+    def self.create_table_if_not_exists(path)
       # テーブルがなかったらテーブルを作成する
-      FileUtils.mkdir_p File.dirname(database_path)
-
+      FileUtils.mkdir_p File.dirname(path)
       connection = ActiveRecord::Base.connection
 
-      connection.table_exists?(:tasks)
+      return if connection.table_exists?(:tasks)
 
       connection.create_table :tasks do |t|
         t.column :name, :string, null: false
@@ -34,6 +34,7 @@ module Todo
       connection.add_index :tasks, :state
       connection.add_index :tasks, :created_at
     end
-    # あとでprivateで各メソッドを隠蔽する
+
+    private_class_method :connect_databese, :create_table_if_not_exists
   end
 end
